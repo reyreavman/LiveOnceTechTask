@@ -43,3 +43,13 @@ func ToTaskResponse(task Task) TaskResponse {
 		CreatedAt:   task.CreatedAt,
 	}
 }
+
+func ToTaskResponses(tasks []Task) []TaskResponse {
+	result := make([]TaskResponse, 0, len(tasks))
+
+	for _, task := range tasks {
+		result = append(result, ToTaskResponse(task))
+	}
+
+	return result
+}
