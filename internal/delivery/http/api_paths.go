@@ -2,6 +2,7 @@ package http
 
 const (
 	TASKS = "/tasks"
+	TASK_BY_ID = "/tasks/{id}"
 
-	TASK_BY_ID = "/tasks/"
+	PATTERN_TASK_BY_ID = "/tasks/"
 )
