@@ -1,0 +1,11 @@
+.vscode/
+
+*.exe
+*.so
+*.test
+*.coverprofile
+*.out
+*.txt
+
+go.work
+go.work.sum
