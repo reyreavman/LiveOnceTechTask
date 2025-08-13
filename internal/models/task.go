@@ -1,6 +1,9 @@
 package models
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type Task struct {
 	Id          string
@@ -11,17 +14,31 @@ type Task struct {
 }
 
 type CreateTaskRequest struct {
-	Title       string
-	Description string
-	Status      Status
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Status      Status `json:"status"`
 }
 
 type TaskResponse struct {
-	Id          string
-	Title       string
-	Description string
-	Status      Status
-	CreatedAt   time.Time
+	Id          string    `json:"id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Status      Status    `json:"status"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
+func ValidateCreateTaskRequest(createTaskRequest CreateTaskRequest) error {
+	if createTaskRequest.Title == "" {
+		return fmt.Errorf("title is required")
+	}
+	if createTaskRequest.Description == "" {
+		return fmt.Errorf("description is required")
+	}
+	if createTaskRequest.Status == "" {
+		return fmt.Errorf("status is required")
+	}
+
+	return nil
 }
 
 func ToTask(createTaskRequest CreateTaskRequest, id string, createdAt time.Time) Task {
