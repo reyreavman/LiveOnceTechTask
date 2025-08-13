@@ -37,10 +37,11 @@ func (s *TaskService) GetTaskById(ctx context.Context, id string) (*models.TaskR
 	return &taskResponse, nil
 }
 
-func (s *TaskService) GetTasksByStatus(ctx context.Context, status *models.Status) []models.Task {
-	if status != nil {
-		return s.taskRepository.GetTasksByStatus(ctx, *status)
+func (s *TaskService) GetTasksByStatus(ctx context.Context, status models.Status) []models.TaskResponse {
+	if status != "" {
+		tasks := s.taskRepository.GetTasksByStatus(ctx, status)
+		return models.ToTaskResponses(tasks)
 	}
 
-	return s.taskRepository.GetAllTasks(ctx)
+	return models.ToTaskResponses(s.taskRepository.GetAllTasks(ctx))
 }
