@@ -13,7 +13,7 @@ type TaskService struct {
 	idGenerator    id.Generator
 }
 
-func NewTaskRepository(taskRepository task.Repository) *TaskService {
+func NewTaskService(taskRepository task.Repository) *TaskService {
 	return &TaskService{
 		taskRepository: taskRepository,
 	}
