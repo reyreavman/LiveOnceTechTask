@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"liveoncetechtask/internal/logger"
 	"liveoncetechtask/internal/models"
 	"liveoncetechtask/internal/task"
 	"net/http"
@@ -13,12 +14,15 @@ import (
 
 type TaskHandler struct {
 	service task.Service
+	logger  *logger.Logger
+
 	headers map[string]string
 }
 
-func NewTaskHandler(service task.Service) *TaskHandler {
+func NewTaskHandler(service task.Service, logger *logger.Logger) *TaskHandler {
 	return &TaskHandler{
 		service: service,
+		logger:  logger,
 		headers: map[string]string{
 			"Content-Type": "application/json",
 		},
@@ -29,9 +33,13 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	var creatTaskRequest models.CreateTaskRequest
+	h.logger.Info("create_task started", "", nil)
 
-	if err := json.NewDecoder(r.Body).Decode(&creatTaskRequest); err != nil {
+	var createTaskRequest models.CreateTaskRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&createTaskRequest); err != nil {
+		h.logger.Error("create_task: decode failed", "", err, nil)
+
 		error := models.Error{
 			Type:    "invalid request body",
 			Message: err.Error(),
@@ -44,7 +52,11 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := models.ValidateCreateTaskRequest(creatTaskRequest); err != nil {
+	if err := models.ValidateCreateTaskRequest(createTaskRequest); err != nil {
+		h.logger.Error("create_task: validation failed", "", err, map[string]interface{}{
+			"request": createTaskRequest,
+		})
+
 		error := models.Error{
 			Type:    "invalid request body",
 			Message: err.Error(),
@@ -56,7 +68,12 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		)
 		return
 	}
-	taskResponse := h.service.CreateTask(ctx, creatTaskRequest)
+	taskResponse := h.service.CreateTask(ctx, createTaskRequest)
+
+	h.logger.Info("create_task completed", "", map[string]interface{}{
+		"task_id": taskResponse.Id,
+		"status":  taskResponse.Status,
+	})
 
 	constructResponse(h.headers, http.StatusCreated, w, taskResponse)
 }
@@ -66,17 +83,30 @@ func (h *TaskHandler) GetTaskById(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	taskId := strings.TrimPrefix(r.URL.Path, PATTERN_TASK_BY_ID)
+	h.logger.Debug("get_task_by_id started", map[string]interface{}{
+		"task_id": taskId,
+	})
 
 	taskResponse, err := h.service.GetTaskById(ctx, taskId)
 	if err != nil {
 		if errors.Is(err, task.ErrTaskNotFound) {
+			h.logger.Warning("get_task_by_id: task not found", "", map[string]interface{}{
+				"task_id": taskId,
+			})
 			w.WriteHeader(http.StatusNotFound)
 			return
 		} else {
+			h.logger.Error("get_task_by_id: failed", "", err, map[string]interface{}{
+				"task_id": taskId,
+			})
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 	}
+
+	h.logger.Info("get_task_by_id completed", "", map[string]interface{}{
+		"task_id": taskId,
+	})
 
 	constructResponse(h.headers, http.StatusOK, w, taskResponse)
 }
@@ -86,8 +116,16 @@ func (h *TaskHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	status := models.Status(r.URL.Query().Get("status"))
-	taskResponse := h.service.GetTasksByStatus(ctx, status)
+	h.logger.Debug("get_tasks started", map[string]interface{}{
+		"status": status,
+	})
 
+	taskResponse := h.service.GetTasksByStatus(ctx, status)
+	h.logger.Info("get_tasks completed", "", map[string]interface{}{
+		"count":  len(taskResponse),
+		"status": status,
+	})
+	
 	constructResponse(h.headers, http.StatusOK, w, taskResponse)
 }
 
