@@ -44,11 +44,7 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 			Type:    "invalid request body",
 			Message: err.Error(),
 		}
-		http.Error(
-			w,
-			models.ErrorToJSON(error),
-			http.StatusBadRequest,
-		)
+		constructResponse(h.headers, http.StatusBadRequest, w, error)
 		return
 	}
 
@@ -61,11 +57,7 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 			Type:    "invalid request body",
 			Message: err.Error(),
 		}
-		http.Error(
-			w,
-			models.ErrorToJSON(error),
-			http.StatusBadRequest,
-		)
+		constructResponse(h.headers, http.StatusBadRequest, w, error)
 		return
 	}
 	taskResponse := h.service.CreateTask(ctx, createTaskRequest)
@@ -118,7 +110,7 @@ func (h *TaskHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
 		"count":  len(taskResponse),
 		"status": status,
 	})
-	
+
 	constructResponse(h.headers, http.StatusOK, w, taskResponse)
 }
 
@@ -128,10 +120,10 @@ func (h *TaskHandler) GetStatusList(w http.ResponseWriter, r *http.Request) {
 }
 
 func constructResponse(headers map[string]string, status int, w http.ResponseWriter, responseBody any) {
-    for k, v := range headers {
-        w.Header().Set(k, v)
-    }
+	for k, v := range headers {
+		w.Header().Set(k, v)
+	}
 
-    w.WriteHeader(status)
-    json.NewEncoder(w).Encode(responseBody)
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(responseBody)
 }
