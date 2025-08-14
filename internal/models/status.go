@@ -39,3 +39,9 @@ func (s *Status) UnmarshalJSON(data []byte) error {
 
 	return nil
 }
+
+func GetStatusList() []Status {
+	return []Status{
+		New, InProgress, OnHold, Completed, Cancelled,
+	}
+}

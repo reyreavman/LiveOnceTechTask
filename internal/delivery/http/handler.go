@@ -122,6 +122,11 @@ func (h *TaskHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
 	constructResponse(h.headers, http.StatusOK, w, taskResponse)
 }
 
+func (h *TaskHandler) GetStatusList(w http.ResponseWriter, r *http.Request) {
+	constructResponse(h.headers, http.StatusOK, w, models.GetStatusList())
+	h.logger.Info("get_statis_list completed", "", nil)
+}
+
 func constructResponse(headers map[string]string, status int, w http.ResponseWriter, responseBody any) {
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(responseBody)
