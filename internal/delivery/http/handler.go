@@ -24,7 +24,7 @@ func NewTaskHandler(service task.Service, logger *logger.Logger) *TaskHandler {
 		service: service,
 		logger:  logger,
 		headers: map[string]string{
-			"Content-Type": "application/json",
+			"Content-Type": "application/json; charset=utf-8",
 		},
 	}
 }
@@ -128,10 +128,10 @@ func (h *TaskHandler) GetStatusList(w http.ResponseWriter, r *http.Request) {
 }
 
 func constructResponse(headers map[string]string, status int, w http.ResponseWriter, responseBody any) {
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(responseBody)
+    for k, v := range headers {
+        w.Header().Set(k, v)
+    }
 
-	for k, v := range headers {
-		w.Header().Set(k, v)
-	}
+    w.WriteHeader(status)
+    json.NewEncoder(w).Encode(responseBody)
 }
