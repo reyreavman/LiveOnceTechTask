@@ -18,7 +18,6 @@ type LogEntry struct {
 	Metadata  map[string]interface{} `json:"metadata,omitempty"`
 }
 
-// Logger - асинхронный логгер
 type Logger struct {
 	logChan    chan LogEntry
 	done       chan struct{}
@@ -29,7 +28,6 @@ type Logger struct {
 	shutdownMu sync.Mutex
 }
 
-// Создание нового логгера
 func NewLogger() *Logger {
 	logger := &Logger{
 		logChan:  make(chan LogEntry, 1000),
@@ -44,7 +42,37 @@ func NewLogger() *Logger {
 	return logger
 }
 
-// Обработчик логов
+func (l *Logger) Debug(msg string, metadata map[string]interface{}) {
+	l.log(DEBUG, msg, "", metadata)
+}
+
+func (l *Logger) Info(msg string, userID string, metadata map[string]interface{}) {
+	l.log(INFO, msg, userID, metadata)
+}
+
+func (l *Logger) Warning(msg string, userID string, metadata map[string]interface{}) {
+	l.log(WARNING, msg, userID, metadata)
+}
+
+func (l *Logger) Error(msg string, userID string, err error, metadata map[string]interface{}) {
+	if metadata == nil {
+		metadata = make(map[string]interface{})
+	}
+	metadata["error"] = err.Error()
+	
+	l.log(ERROR, msg, userID, nil)
+}
+
+func (l *Logger) Stop() {
+	l.shutdownMu.Lock()
+	l.shutdown = true
+	close(l.done)
+	l.shutdownMu.Unlock()
+
+	l.wg.Wait()
+	close(l.logChan)
+}
+
 func (l *Logger) processLogs() {
 	defer l.wg.Done()
 
@@ -56,7 +84,6 @@ func (l *Logger) processLogs() {
 			}
 			l.writeLog(entry)
 		case <-l.done:
-			// Дописать оставшиеся логи перед выходом
 			for {
 				select {
 				case entry := <-l.logChan:
@@ -78,28 +105,7 @@ func (l *Logger) writeLog(entry LogEntry) {
 	os.Stdout.Write(append(logData, '\n'))
 }
 
-func (l *Logger) Debug(msg string, metadata map[string]interface{}) {
-	l.log(DEBUG, msg, "", metadata)
-}
-
-func (l *Logger) Info(msg, userID string, metadata map[string]interface{}) {
-	l.log(INFO, msg, userID, metadata)
-}
-
-func (l *Logger) Warning(msg, userID string, metadata map[string]interface{}) {
-	l.log(WARNING, msg, userID, metadata)
-}
-
-func (l *Logger) Error(msg, userID string, err error, metadata map[string]interface{}) {
-	if metadata == nil {
-		metadata = make(map[string]interface{})
-	}
-	metadata["error"] = err.Error()
-	
-	l.log(ERROR, msg, userID, nil)
-}
-
-func (l *Logger) log(level int, message, userID string, metadata map[string]interface{}) {
+func (l *Logger) log(level int, message string, userID string, metadata map[string]interface{}) {
 	l.shutdownMu.Lock()
 	defer l.shutdownMu.Unlock()
 	
@@ -131,14 +137,4 @@ func (l *Logger) log(level int, message, userID string, metadata map[string]inte
 	default:
 		fmt.Fprintf(os.Stderr, "Logger buffer overflow. Message: %s\n", message)
 	}
-}
-
-func (l *Logger) Stop() {
-	l.shutdownMu.Lock()
-	l.shutdown = true
-	close(l.done)
-	l.shutdownMu.Unlock()
-
-	l.wg.Wait()
-	close(l.logChan)
 }

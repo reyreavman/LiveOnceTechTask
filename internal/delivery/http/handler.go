@@ -83,9 +83,6 @@ func (h *TaskHandler) GetTaskById(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	taskId := strings.TrimPrefix(r.URL.Path, PATTERN_TASK_BY_ID)
-	h.logger.Debug("get_task_by_id started", map[string]interface{}{
-		"task_id": taskId,
-	})
 
 	taskResponse, err := h.service.GetTaskById(ctx, taskId)
 	if err != nil {
@@ -116,10 +113,6 @@ func (h *TaskHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	status := models.Status(r.URL.Query().Get("status"))
-	h.logger.Debug("get_tasks started", map[string]interface{}{
-		"status": status,
-	})
-
 	taskResponse := h.service.GetTasksByStatus(ctx, status)
 	h.logger.Info("get_tasks completed", "", map[string]interface{}{
 		"count":  len(taskResponse),

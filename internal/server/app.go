@@ -3,6 +3,8 @@ package server
 import (
 	"context"
 	thttp "liveoncetechtask/internal/delivery/http"
+	"liveoncetechtask/internal/logger"
+	ratelimiter "liveoncetechtask/internal/rate_limiter"
 	"liveoncetechtask/internal/task"
 	"liveoncetechtask/internal/task/repository"
 	"liveoncetechtask/internal/task/service"
@@ -17,21 +19,27 @@ type App struct {
 	httpServer *http.Server
 
 	service task.Service
+	logger  *logger.Logger
 }
 
 func NewApp() *App {
+	log := logger.NewLogger()
 	taskRepository := repository.NewTaskRepository()
 	taskService := service.NewTaskService(taskRepository)
 
 	return &App{
 		service: taskService,
+		logger:  log,
 	}
 }
 
 func (a *App) Run(port string) error {
+	rl := ratelimiter.NewRateLimiter(100, time.Second)
+	defer rl.Stop()
+
 	router := http.NewServeMux()
 
-	thttp.RegisterHTTPEndpoints(router, a.service)
+	thttp.RegisterHTTPEndpoints(router, a.service, a.logger, rl)
 
 	a.httpServer = &http.Server{
 		Addr:         ":" + port,
@@ -41,9 +49,11 @@ func (a *App) Run(port string) error {
 	}
 
 	go func() {
-		log.Printf("Server started")
+		a.logger.Info("Server started", "", map[string]interface{}{
+			"port": 8080,
+		})
 		if err := a.httpServer.ListenAndServe(); err != nil {
-			log.Fatal("Failed to listen and serve: %w", err)
+			log.Fatalf("Failed to listen and serve: %+v", err)
 		}
 	}()
 
