@@ -138,7 +138,7 @@ curl http://localhost:8080/tasks?status=Новая
 ---
 
 #### 3. **Получение списка статусов**  
-**`GET /tasks/statuse`**  
+**`GET /tasks/statuses`**  
 Возвращает список статусов.
 
 **Пример запроса**:
