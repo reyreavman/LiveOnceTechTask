@@ -1,0 +1,11 @@
+services:
+  app:
+    container_name: live-once-tech-task
+    build:
+      context: ..
+      dockerfile: deployments/dockerfile
+    image: live-once-tech-task:latest
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+    environment:
+      APP_PORT: "${APP_PORT}"

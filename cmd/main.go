@@ -3,10 +3,11 @@ package main
 import (
 	"liveoncetechtask/internal/server"
 	"log"
+	"os"
 )
 
 func main() {
-	port := "8080"
+	port := os.Getenv("APP_PORT")
 
 	app := server.NewApp()
 
